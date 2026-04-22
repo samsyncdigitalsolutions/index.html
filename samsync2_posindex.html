@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SamSync Digital POS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .pos-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #25D366; /* WhatsApp Green */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #128C7E;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="pos-container">
+    <h2>SamSync Digital Solutions</h2>
+    
+    <div class="form-group">
+        <label for="itemName">Item Name</label>
+        <input type="text" id="itemName" value="Abuka Bed - King Size">
+    </div>
+
+    <div class="form-group">
+        <label for="standardPrice">Standard Price (GMD)</label>
+        <input type="number" id="standardPrice" value="170000">
+    </div>
+
+    <div class="form-group">
+        <label for="negotiatedPrice">Agreed VIP Price (GMD)</label>
+        <input type="number" id="negotiatedPrice" placeholder="Enter final price">
+    </div>
+
+    <div class="form-group">
+        <label for="minPrice">Minimum Approved Price (Hidden)</label>
+        <input type="number" id="minPrice" value="140000" disabled>
+    </div>
+
+    <div class="form-group">
+        <label for="customerPhone">Customer WhatsApp Number</label>
+        <input type="text" id="customerPhone" placeholder="e.g. 220XXXXXXX">
+    </div>
+
+    <div class="error-message" id="errorMsg"></div>
+
+    <button onclick="generateReceipt()">Process & Send to WhatsApp</button>
+</div>
+
+<script>
+    function generateReceipt() {
+        // 1. Gather all the data from the input fields
+        const itemName = document.getElementById("itemName").value;
+        const standardPrice = parseFloat(document.getElementById("standardPrice").value);
+        const negotiatedPrice = parseFloat(document.getElementById("negotiatedPrice").value);
+        const minPrice = parseFloat(document.getElementById("minPrice").value);
+        let phone = document.getElementById("customerPhone").value;
+        const errorMsg = document.getElementById("errorMsg");
+
+        // Clear previous errors
+        errorMsg.style.display = "none";
+        errorMsg.innerText = "";
+
+        // 2. Security Check (The Logic from your Python script)
+        if (negotiatedPrice < minPrice) {
+            errorMsg.innerText = "SALE BLOCKED: Price is below the minimum margin. Manager PIN required.";
+            errorMsg.style.display = "block";
+            return; // Stop the script
+        }
+
+        if (!phone) {
+            errorMsg.innerText = "Please enter a WhatsApp number.";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+        // 3. Calculate Hidden Discount
+        const discount = standardPrice - negotiatedPrice;
+
+        // 4. Format the Receipt Text
+        let receiptText = "*LADY NJIES COLLECTION*\n";
+        receiptText += "-------------------------\n";
+        receiptText += "Item: " + itemName + "\n";
+        receiptText += "Final Price: GMD " + negotiatedPrice.toLocaleString() + "\n";
+        
+        if (discount > 0) {
+            receiptText += "VIP Discount Applied: GMD " + discount.toLocaleString() + "\n";
+        }
+        
+        receiptText += "-------------------------\n";
+        receiptText += "Thank you for shopping with us!\n";
+        receiptText += "Powered by SamSync Digital";
+
+        // 5. The WhatsApp Bridge
+        // We use encodeURIComponent to safely format the text for a web link
+        const encodedText = encodeURIComponent(receiptText);
+        
+        // Ensure the phone number removes spaces or plus signs
+        phone = phone.replace(/[^0-9]/g, '');
+
+        // Generate the official WhatsApp API link
+        const whatsappUrl = "https://wa.me/" + phone + "?text=" + encodedText;
+
+        // Open WhatsApp in a new tab
+        window.open(whatsappUrl, "_blank");
+    }
+</script>
+
+</body>
+</html>
